@@ -6,21 +6,23 @@ import {
   AddDiaryEntryBody,
   DeleteDiaryEntryParams,
 } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-router.get("/diary", async (req, res): Promise<void> => {
+router.get("/diary", requireAuth, async (req, res): Promise<void> => {
   const params = GetDiaryEntriesQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  const userId = req.user!.userId;
   const entries = await db
     .select()
     .from(diaryEntriesTable)
-    .where(eq(diaryEntriesTable.date, params.data.date));
+    .where(and(eq(diaryEntriesTable.date, params.data.date), eq(diaryEntriesTable.userId, userId)));
 
   const totalCalories = entries.reduce((sum, e) => sum + e.calories, 0);
   const totalProteinG = entries.reduce((sum, e) => sum + e.proteinG, 0);
@@ -39,18 +41,18 @@ router.get("/diary", async (req, res): Promise<void> => {
   );
 });
 
-router.post("/diary", async (req, res): Promise<void> => {
+router.post("/diary", requireAuth, async (req, res): Promise<void> => {
   const parsed = AddDiaryEntryBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const [entry] = await db.insert(diaryEntriesTable).values(parsed.data).returning();
+  const [entry] = await db.insert(diaryEntriesTable).values({ ...parsed.data, userId: req.user!.userId }).returning();
   res.status(201).json(entry);
 });
 
-router.delete("/diary/:id", async (req, res): Promise<void> => {
+router.delete("/diary/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteDiaryEntryParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -58,7 +60,9 @@ router.delete("/diary/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  await db.delete(diaryEntriesTable).where(eq(diaryEntriesTable.id, params.data.id));
+  await db.delete(diaryEntriesTable).where(
+    and(eq(diaryEntriesTable.id, params.data.id), eq(diaryEntriesTable.userId, req.user!.userId))
+  );
   res.sendStatus(204);
 });
 

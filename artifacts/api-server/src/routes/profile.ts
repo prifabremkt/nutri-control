@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db, profileTable } from "@workspace/db";
 import { UpdateProfileBody, GetProfileResponse, UpdateProfileResponse } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -60,33 +61,33 @@ function calculateNutrition(profile: {
   };
 }
 
-async function ensureProfile() {
-  const existing = await db.select().from(profileTable).limit(1);
+async function ensureProfile(userId: number) {
+  const existing = await db.select().from(profileTable).where(eq(profileTable.userId, userId)).limit(1);
   if (existing.length === 0) {
-    const [created] = await db.insert(profileTable).values({}).returning();
+    const [created] = await db.insert(profileTable).values({ userId }).returning();
     return created;
   }
   return existing[0];
 }
 
-router.get("/profile", async (req, res): Promise<void> => {
-  const profile = await ensureProfile();
+router.get("/profile", requireAuth, async (req, res): Promise<void> => {
+  const profile = await ensureProfile(req.user!.userId);
   const nutrition = calculateNutrition(profile);
   res.json(GetProfileResponse.parse({ ...profile, ...nutrition }));
 });
 
-router.put("/profile", async (req, res): Promise<void> => {
+router.put("/profile", requireAuth, async (req, res): Promise<void> => {
   const parsed = UpdateProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const profile = await ensureProfile();
+  const profile = await ensureProfile(req.user!.userId);
   const [updated] = await db
     .update(profileTable)
     .set(parsed.data)
-    .where(eq(profileTable.id, profile.id))
+    .where(and(eq(profileTable.id, profile.id), eq(profileTable.userId, req.user!.userId)))
     .returning();
 
   const nutrition = calculateNutrition(updated);

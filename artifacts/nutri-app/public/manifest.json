@@ -1,0 +1,20 @@
+{
+  "name": "My Nutri Control",
+  "short_name": "NutriControl",
+  "description": "Controle nutricional inteligente - rastreie calorias, macros e hidratação",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#7c3aed",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "food"],
+  "lang": "pt-BR"
+}

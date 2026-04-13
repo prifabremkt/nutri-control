@@ -2,10 +2,12 @@ import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import DiaryPage from "@/pages/DiaryPage";
 import RecipesPage from "@/pages/RecipesPage";
 import ProgressPage from "@/pages/ProgressPage";
 import ProfilePage from "@/pages/ProfilePage";
+import LoginPage from "@/pages/LoginPage";
 import NotFound from "@/pages/not-found";
 import { BookOpen, ChartBar, Book, User } from "lucide-react";
 
@@ -61,14 +63,20 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Router() {
+function AppRoutes() {
+  const { isAuthenticated, login, logout } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={login} />;
+  }
+
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={DiaryPage} />
+        <Route path="/" component={() => <DiaryPage onLogout={logout} />} />
         <Route path="/receitas" component={RecipesPage} />
         <Route path="/progresso" component={ProgressPage} />
-        <Route path="/perfil" component={ProfilePage} />
+        <Route path="/perfil" component={() => <ProfilePage onLogout={logout} />} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
@@ -79,9 +87,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AppRoutes />
+          </WouterRouter>
+        </AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

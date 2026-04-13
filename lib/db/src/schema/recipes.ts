@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const recipesTable = pgTable("recipes", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().default(1),
   name: text("name").notNull(),
   description: text("description"),
   servings: integer("servings").notNull().default(1),

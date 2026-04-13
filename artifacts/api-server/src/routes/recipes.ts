@@ -7,27 +7,28 @@ import {
   GetRecipesResponse,
   DeleteRecipeParams,
 } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-router.get("/recipes", async (_req, res): Promise<void> => {
-  const recipes = await db.select().from(recipesTable).orderBy(recipesTable.name);
+router.get("/recipes", requireAuth, async (req, res): Promise<void> => {
+  const recipes = await db.select().from(recipesTable).where(eq(recipesTable.userId, req.user!.userId)).orderBy(recipesTable.name);
   res.json(GetRecipesResponse.parse(recipes));
 });
 
-router.post("/recipes", async (req, res): Promise<void> => {
+router.post("/recipes", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateRecipeBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const [recipe] = await db.insert(recipesTable).values(parsed.data).returning();
+  const [recipe] = await db.insert(recipesTable).values({ ...parsed.data, userId: req.user!.userId }).returning();
   res.status(201).json(GetRecipeResponse.parse(recipe));
 });
 
-router.get("/recipes/:id", async (req, res): Promise<void> => {
+router.get("/recipes/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetRecipeParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -38,18 +39,18 @@ router.get("/recipes/:id", async (req, res): Promise<void> => {
   const [recipe] = await db
     .select()
     .from(recipesTable)
-    .where(eq(recipesTable.id, params.data.id))
+    .where(and(eq(recipesTable.id, params.data.id), eq(recipesTable.userId, req.user!.userId)))
     .limit(1);
 
   if (!recipe) {
-    res.status(404).json({ error: "Recipe not found" });
+    res.status(404).json({ error: "Receita não encontrada" });
     return;
   }
 
   res.json(GetRecipeResponse.parse(recipe));
 });
 
-router.delete("/recipes/:id", async (req, res): Promise<void> => {
+router.delete("/recipes/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteRecipeParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -57,7 +58,7 @@ router.delete("/recipes/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  await db.delete(recipesTable).where(eq(recipesTable.id, params.data.id));
+  await db.delete(recipesTable).where(and(eq(recipesTable.id, params.data.id), eq(recipesTable.userId, req.user!.userId)));
   res.sendStatus(204);
 });
 
