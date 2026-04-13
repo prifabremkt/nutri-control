@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "NutriControl"
+version = "1.0.0"
+id = "artifacts/nutri-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22340
+
+[services.development]
+run = "pnpm --filter @workspace/nutri-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nutri-app", "run", "build" ]
+publicDir = "artifacts/nutri-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22340"
+BASE_PATH = "/"

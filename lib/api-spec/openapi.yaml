@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NutriControl - Nutritional tracking app API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: User profile management
+  - name: diary
+    description: Food diary and meal logging
+  - name: foods
+    description: Food search (TACO table)
+  - name: hydration
+    description: Water intake tracking
+  - name: recipes
+    description: Recipe management
+  - name: progress
+    description: Progress tracking
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,285 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+  /diary:
+    get:
+      operationId: getDiaryEntries
+      tags: [diary]
+      summary: Get diary entries for a date
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Diary entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiaryDay"
+    post:
+      operationId: addDiaryEntry
+      tags: [diary]
+      summary: Add a food entry to diary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDiaryEntryBody"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiaryEntry"
+
+  /diary/{id}:
+    delete:
+      operationId: deleteDiaryEntry
+      tags: [diary]
+      summary: Delete a diary entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /foods/search:
+    get:
+      operationId: searchFoods
+      tags: [foods]
+      summary: Search TACO food table
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Food search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Food"
+
+  /hydration:
+    get:
+      operationId: getHydration
+      tags: [hydration]
+      summary: Get hydration for a date
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Hydration data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hydration"
+    post:
+      operationId: addHydration
+      tags: [hydration]
+      summary: Add water intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHydrationBody"
+      responses:
+        "200":
+          description: Updated hydration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hydration"
+
+  /hydration/reset:
+    post:
+      operationId: resetHydration
+      tags: [hydration]
+      summary: Reset hydration for a date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+              required: [date]
+      responses:
+        "200":
+          description: Reset hydration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hydration"
+
+  /recipes:
+    get:
+      operationId: getRecipes
+      tags: [recipes]
+      summary: Get all recipes
+      responses:
+        "200":
+          description: Recipe list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+    post:
+      operationId: createRecipe
+      tags: [recipes]
+      summary: Create a recipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecipeBody"
+      responses:
+        "201":
+          description: Created recipe
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+
+  /recipes/{id}:
+    get:
+      operationId: getRecipe
+      tags: [recipes]
+      summary: Get recipe details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recipe details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recipe"
+    delete:
+      operationId: deleteRecipe
+      tags: [recipes]
+      summary: Delete a recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get progress history (last 30 days)
+      responses:
+        "200":
+          description: Progress history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressHistory"
+    post:
+      operationId: logWeight
+      tags: [progress]
+      summary: Log a weight entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogWeightBody"
+      responses:
+        "201":
+          description: Created weight entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightEntry"
+
+  /diary/summary:
+    get:
+      operationId: getDiarySummary
+      tags: [diary]
+      summary: Get weekly diary summary (calories per day for the last 7 days)
+      responses:
+        "200":
+          description: Weekly summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailySummary"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +322,308 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        sex:
+          type: string
+          enum: [M, F]
+        weightKg:
+          type: number
+        heightCm:
+          type: number
+        activityLevel:
+          type: string
+          enum: [sedentary, lightly_active, moderately_active, very_active, extra_active]
+        caloricGoal:
+          type: string
+          enum: [maintain, lose_mild, lose_moderate, lose_aggressive, gain]
+        bmi:
+          type: number
+        bmr:
+          type: number
+        tdee:
+          type: number
+        targetCalories:
+          type: number
+        targetProteinG:
+          type: number
+        targetCarbsG:
+          type: number
+        targetFatG:
+          type: number
+        targetWaterMl:
+          type: number
+        intermittentFasting:
+          type: boolean
+        fastingStartHour:
+          type: integer
+        fastingEndHour:
+          type: integer
+      required:
+        - id
+        - name
+        - age
+        - sex
+        - weightKg
+        - heightCm
+        - activityLevel
+        - caloricGoal
+        - bmi
+        - bmr
+        - tdee
+        - targetCalories
+        - targetProteinG
+        - targetCarbsG
+        - targetFatG
+        - targetWaterMl
+        - intermittentFasting
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        sex:
+          type: string
+          enum: [M, F]
+        weightKg:
+          type: number
+        heightCm:
+          type: number
+        activityLevel:
+          type: string
+          enum: [sedentary, lightly_active, moderately_active, very_active, extra_active]
+        caloricGoal:
+          type: string
+          enum: [maintain, lose_mild, lose_moderate, lose_aggressive, gain]
+        intermittentFasting:
+          type: boolean
+        fastingStartHour:
+          type: integer
+        fastingEndHour:
+          type: integer
+
+    Food:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        calories:
+          type: number
+        proteinG:
+          type: number
+        carbsG:
+          type: number
+        fatG:
+          type: number
+        fiberG:
+          type: number
+        servingG:
+          type: number
+      required: [id, name, calories, proteinG, carbsG, fatG, servingG]
+
+    DiaryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodId:
+          type: integer
+        foodName:
+          type: string
+        quantityG:
+          type: number
+        calories:
+          type: number
+        proteinG:
+          type: number
+        carbsG:
+          type: number
+        fatG:
+          type: number
+      required: [id, date, mealType, foodName, quantityG, calories, proteinG, carbsG, fatG]
+
+    CreateDiaryEntryBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        foodId:
+          type: integer
+        foodName:
+          type: string
+        quantityG:
+          type: number
+        calories:
+          type: number
+        proteinG:
+          type: number
+        carbsG:
+          type: number
+        fatG:
+          type: number
+      required: [date, mealType, foodName, quantityG, calories, proteinG, carbsG, fatG]
+
+    DiaryDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiaryEntry"
+        totalCalories:
+          type: number
+        totalProteinG:
+          type: number
+        totalCarbsG:
+          type: number
+        totalFatG:
+          type: number
+      required: [date, entries, totalCalories, totalProteinG, totalCarbsG, totalFatG]
+
+    Hydration:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalMl:
+          type: number
+        cups:
+          type: integer
+      required: [date, totalMl, cups]
+
+    AddHydrationBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        amountMl:
+          type: number
+      required: [date, amountMl]
+
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        servings:
+          type: integer
+        caloriesPerServing:
+          type: number
+        proteinGPerServing:
+          type: number
+        carbsGPerServing:
+          type: number
+        fatGPerServing:
+          type: number
+        ingredients:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: string
+      required: [id, name, servings, caloriesPerServing, proteinGPerServing, carbsGPerServing, fatGPerServing, ingredients]
+
+    CreateRecipeBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        servings:
+          type: integer
+        caloriesPerServing:
+          type: number
+        proteinGPerServing:
+          type: number
+        carbsGPerServing:
+          type: number
+        fatGPerServing:
+          type: number
+        ingredients:
+          type: array
+          items:
+            type: string
+        instructions:
+          type: string
+      required: [name, servings, caloriesPerServing, proteinGPerServing, carbsGPerServing, fatGPerServing, ingredients]
+
+    WeightEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        weightKg:
+          type: number
+      required: [id, date, weightKg]
+
+    LogWeightBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        weightKg:
+          type: number
+      required: [date, weightKg]
+
+    ProgressHistory:
+      type: object
+      properties:
+        weightEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeightEntry"
+        dailySummaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailySummary"
+      required: [weightEntries, dailySummaries]
+
+    DailySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalCalories:
+          type: number
+        targetCalories:
+          type: number
+      required: [date, totalCalories, targetCalories]
