@@ -1,4 +1,5 @@
 {
+  "framework": null,
   "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/nutri-app run build",
   "outputDirectory": "artifacts/nutri-app/dist/public",
   "installCommand": "pnpm install",
