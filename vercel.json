@@ -1,0 +1,9 @@
+{
+  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/nutri-app run build",
+  "outputDirectory": "artifacts/nutri-app/dist",
+  "installCommand": "pnpm install",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
