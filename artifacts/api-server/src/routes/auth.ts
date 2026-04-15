@@ -18,8 +18,9 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     const result = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase().trim())).limit(1);
     user = result[0];
   } catch (err) {
-    console.error("[auth/login] DB error:", err);
-    res.status(500).json({ error: "Erro de banco de dados", detail: String(err) });
+    const cause = (err as any)?.cause;
+    console.error("[auth/login] DB error:", err, "cause:", cause);
+    res.status(500).json({ error: "Erro de banco de dados", detail: String(err), cause: String(cause) });
     return;
   }
 
