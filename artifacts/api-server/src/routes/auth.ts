@@ -13,7 +13,16 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase().trim())).limit(1);
+  let user: typeof usersTable.$inferSelect | undefined;
+  try {
+    const result = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase().trim())).limit(1);
+    user = result[0];
+  } catch (err) {
+    console.error("[auth/login] DB error:", err);
+    res.status(500).json({ error: "Erro de banco de dados", detail: String(err) });
+    return;
+  }
+
   if (!user) {
     res.status(401).json({ error: "E-mail ou senha incorretos" });
     return;
